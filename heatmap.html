@@ -28,8 +28,8 @@
 }
 
 .bin:hover {
-  	stroke: white;
-    stroke-width: 2;
+  	stroke: black;
+    stroke-width: 1;
     cursor: pointer;
 }
 
@@ -48,6 +48,8 @@
 </head>
 
 <body>
+  <button id="week_num">By Week Number</button>
+  <button id="year">By Year</button>
 	<div id="heatmap"></div>
 	<div id="tooltip"><p></p></div>
 </body>
@@ -143,14 +145,16 @@ d3.csv("test_2.csv", function(error, data) {
 
     if(windowWidth - d3.event.pageX < 200) {
       var leftOffset = d3.event.pageX - 150;
-    } else {
+    } else if(d3.event.pageX < 200) {
       var leftOffset = d3.event.pageX;
+    } else {
+      var leftOffset = d3.event.pageX - 80;
     };
 
     if(d3.event.pageY < 100) {
       var topOffset = d3.event.pageY + 100;
     } else {
-      var topOffset = d3.event.pageY;
+      var topOffset = d3.event.pageY - 20;
     };
 
   	var tooltip = d3.select("#tooltip");
