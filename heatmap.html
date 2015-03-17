@@ -22,7 +22,7 @@
 
 #tooltip p {
     margin: 0;
-    font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+    font-family:  "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
     font-weight: 400;
     font-size: 16px;
     line-height: 20px;
@@ -73,7 +73,7 @@ var y = d3.scale.linear()
 
 var z = d3.scale.linear()
     .domain([0, 600000000])
-    .range(["white", "green"])
+    .range(["red", "green"])
     .interpolate(d3.interpolateLab);
 
 var xAxis = d3.svg.axis()
@@ -167,11 +167,17 @@ d3.csv("test_2.csv", function(error, data) {
         .html(d.year + ", Week " + d.week_num + "<br>" + d.top_movie);
   });
 
-  d3.selectAll(".bin").on("mouseout", function(d) {
+  svg.selectAll(".bin").on("mouseout", function(d) {
 
   	d3.select("#tooltip")
       .style("opacity", 0);;
     });
+
+  svg.selectAll(".bin").on("click", function(d) {
+    window.open("http://www.boxofficemojo.com/weekly/chart/?yr=" 
+      + d.year + "&wk=" + d.week_num + "&p=.htm");
+  });
+
 });
 </script>
 
