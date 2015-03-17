@@ -1,0 +1,149 @@
+<html>
+<head>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
+
+<style>
+#tooltip {
+    position: absolute;
+    width: 150px;
+    height: auto;
+    padding: 5px;
+    background-color: white;
+    color: black;
+    text-align: center;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    border-radius: 10px;
+    -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+    -mox-box-shadow: 4px 4px 4px 10px rgba(0, 0, 0, 0.4);
+    box-shadow: 4px 4px 10px rbga(0, 0, 0, 0.4) pointer-events: none;
+}
+
+#tooltip p {
+    margin: 0;
+    font-family: sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+}
+
+.bin:hover {
+	background-color: black;
+}
+
+</style>
+</head>
+
+<body>
+	<div id="heatmap"></div>
+	<div id="tooltip"><p></p></div>
+</body>
+
+<script>
+var windowHeight = window.innerHeight
+var windowWidth = window.innerWidth
+
+var margin = {top: 20, right: 20, bottom: 130, left: 40},
+    width = windowWidth - margin.left - margin.right,
+    height = windowHeight - margin.top - margin.bottom;
+
+var x = d3.scale.linear()
+    .domain([1, 54])
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .domain([1981, 2016])
+    .rangeRound([height, 0]);
+
+var z = d3.scale.linear()
+    .domain([0, 600000000])
+    .range(["red", "green"])
+    .interpolate(d3.interpolateLab);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+    // .tickFormat()
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+    // .tickFormat(d3.format("d"));
+
+var svg = d3.select("#heatmap").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+d3.csv("test_2.csv", function(error, data) {
+
+  var nest = d3.nest()
+  	.key(function(d) { return d.year; })
+  	.entries(data);
+
+  var weekNo = svg.selectAll(".weekNo")
+      .data(nest)
+    .enter().append("g")
+      .attr("class", "weekNo");
+
+  weekNo.selectAll(".bin")
+      .data(function (d) { return d.values })
+    .enter().append("rect")
+      .attr("class", "bin")
+      .attr("x", function (d) { return x(d.week_num) ; })
+      .attr("width", function (d, i) { return  x(i+1) - x(i); })
+      .style("fill", function(d) { return z(d.inflation_adj_total_gross); });
+  
+  weekNo.each(function (d) {
+    d3.select(this).selectAll(".bin")
+        .attr("y", function(d) { return y(d.year) } )
+        .attr("height", windowHeight / 43 );
+  });
+
+  weekNo.each(function (d) {
+  	var grosses = []
+  	for(i=0; i < d.values.length; i++) {
+
+  		grosses.push(+d.values[i].inflation_adj_total_gross)
+  	}
+
+  	var zWeekNo = d3.scale.linear()
+	    .domain([d3.min(grosses), d3.max(grosses)])
+	    .range(["red", "green"])
+	    .interpolate(d3.interpolateLab);
+
+  	d3.select(this).selectAll(".bin")
+  		.style("fill", function(d) { return zWeekNo(d.inflation_adj_total_gross); })
+  });
+
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis);
+
+  svg.selectAll(".bin").on("mousemove", function(d) {
+
+  	var tooltip = d3.select("#tooltip")
+  	tooltip
+  		.style("left", d3.event.pageX + "px")
+        .style("top", d3.event.pageY - 75 + "px")
+        .style("opacity", 1)
+        .html(d.year + ", Week " + d.week_num + "<br>" + d.top_movie)
+
+
+  });
+
+  d3.selectAll(".bin").on("mouseout", function(d) {
+
+  	d3.select("#tooltip")
+      .style("opacity", 0);;
+    });
+});
+</script>
+
+</html>
