@@ -28,7 +28,20 @@
 }
 
 .bin:hover {
-	background-color: black;
+  	stroke: white;
+    stroke-width: 2;
+    cursor: pointer;
+}
+
+.axis {
+  font: 16px sans-serif;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
 }
 
 </style>
@@ -43,7 +56,7 @@
 var windowHeight = window.innerHeight
 var windowWidth = window.innerWidth
 
-var margin = {top: 20, right: 20, bottom: 130, left: 40},
+var margin = {top: 20, right: 20, bottom: 130, left: 50},
     width = windowWidth - margin.left - margin.right,
     height = windowHeight - margin.top - margin.bottom;
 
@@ -67,8 +80,8 @@ var xAxis = d3.svg.axis()
 
 var yAxis = d3.svg.axis()
     .scale(y)
-    .orient("left");
-    // .tickFormat(d3.format("d"));
+    .orient("left")
+    .tickFormat(d3.format("d"));
 
 var svg = d3.select("#heatmap").append("svg")
     .attr("width", width + margin.left + margin.right)
@@ -92,7 +105,7 @@ d3.csv("test_2.csv", function(error, data) {
     .enter().append("rect")
       .attr("class", "bin")
       .attr("x", function (d) { return x(d.week_num) ; })
-      .attr("width", function (d, i) { return  x(i+1) - x(i); })
+      .attr("width", function (d, i) { return  x(i+1) - x(i) - 0.5; })
       .style("fill", function(d) { return z(d.inflation_adj_total_gross); });
   
   weekNo.each(function (d) {
@@ -128,14 +141,24 @@ d3.csv("test_2.csv", function(error, data) {
 
   svg.selectAll(".bin").on("mousemove", function(d) {
 
-  	var tooltip = d3.select("#tooltip")
+    if(windowWidth - d3.event.pageX < 200) {
+      var leftOffset = d3.event.pageX - 150;
+    } else {
+      var leftOffset = d3.event.pageX;
+    };
+
+    if(d3.event.pageY < 100) {
+      var topOffset = d3.event.pageY + 100;
+    } else {
+      var topOffset = d3.event.pageY;
+    };
+
+  	var tooltip = d3.select("#tooltip");
   	tooltip
-  		.style("left", d3.event.pageX + "px")
-        .style("top", d3.event.pageY - 75 + "px")
+  		.style("left", leftOffset + "px")
+        .style("top", topOffset - 75 + "px")
         .style("opacity", 1)
-        .html(d.year + ", Week " + d.week_num + "<br>" + d.top_movie)
-
-
+        .html(d.year + ", Week " + d.week_num + "<br>" + d.top_movie);
   });
 
   d3.selectAll(".bin").on("mouseout", function(d) {
