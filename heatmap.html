@@ -22,8 +22,9 @@
 
 #tooltip p {
     margin: 0;
-    font-family: sans-serif;
-    font-size: 14px;
+    font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+    font-weight: 400;
+    font-size: 16px;
     line-height: 20px;
 }
 
@@ -51,7 +52,7 @@
   <button id="week_num">By Week Number</button>
   <button id="year">By Year</button>
 	<div id="heatmap"></div>
-	<div id="tooltip"><p></p></div>
+	<div id="tooltip"><p id="value"></p></div>
 </body>
 
 <script>
@@ -72,7 +73,7 @@ var y = d3.scale.linear()
 
 var z = d3.scale.linear()
     .domain([0, 600000000])
-    .range(["red", "green"])
+    .range(["white", "green"])
     .interpolate(d3.interpolateLab);
 
 var xAxis = d3.svg.axis()
@@ -125,7 +126,7 @@ d3.csv("test_2.csv", function(error, data) {
 
   	var zWeekNo = d3.scale.linear()
 	    .domain([d3.min(grosses), d3.max(grosses)])
-	    .range(["red", "green"])
+	    .range(["white", "green"])
 	    .interpolate(d3.interpolateLab);
 
   	d3.select(this).selectAll(".bin")
@@ -162,6 +163,7 @@ d3.csv("test_2.csv", function(error, data) {
   		.style("left", leftOffset + "px")
         .style("top", topOffset - 75 + "px")
         .style("opacity", 1)
+        .select("#value")
         .html(d.year + ", Week " + d.week_num + "<br>" + d.top_movie);
   });
 
