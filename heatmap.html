@@ -67,6 +67,10 @@ var x = d3.scale.linear()
     .domain([1, 54])
     .range([0, width]);
 
+var x2 = d3.time.scale()
+    .domain([new Date(2000, 0, 1), new Date(2000, 11, 31)])
+    .range([0, width]);
+
 var y = d3.scale.linear()
     .domain([1981, 2016])
     .rangeRound([height, 0]);
@@ -79,7 +83,13 @@ var z = d3.scale.linear()
 var xAxis = d3.svg.axis()
     .scale(x)
     .orient("bottom");
-    // .tickFormat()
+
+var xAxisMonths = d3.svg.axis()
+    .scale(x2)
+    .orient("top")
+    .ticks(d3.time.months)
+    .tickSize(0, 0)
+    .tickFormat(d3.time.format("%b"));
 
 var yAxis = d3.svg.axis()
     .scale(y)
@@ -137,6 +147,11 @@ d3.csv("test_2.csv", function(error, data) {
       .attr("class", "x axis")
       .attr("transform", "translate(0," + height + ")")
       .call(xAxis);
+
+  svg.append("g")
+    .attr("class", "x axis months")
+    .attr("transform", "translate(0," + (margin.top - 10) + ")")
+    .call(xAxisMonths);
 
   svg.append("g")
       .attr("class", "y axis")
