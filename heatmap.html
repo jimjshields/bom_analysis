@@ -49,6 +49,7 @@
 </head>
 
 <body>
+  <button id="overall">Overall</button>
   <button id="week_num">By Week Number</button>
   <button id="year">By Year</button>
 	<div id="heatmap"></div>
@@ -56,92 +57,132 @@
 </body>
 
 <script>
-var windowHeight = window.innerHeight
-var windowWidth = window.innerWidth
 
-var margin = {top: 20, right: 20, bottom: 130, left: 50},
-    width = windowWidth - margin.left - margin.right,
-    height = windowHeight - margin.top - margin.bottom;
+function drawSvg() {
+  var windowHeight = window.innerHeight
+  var windowWidth = window.innerWidth
 
-var x = d3.scale.linear()
-    .domain([1, 54])
-    .range([0, width]);
+  var margin = {top: 20, right: 20, bottom: 130, left: 50},
+      width = windowWidth - margin.left - margin.right,
+      height = windowHeight - margin.top - margin.bottom;
 
-var x2 = d3.time.scale()
-    .domain([new Date(2000, 0, 1), new Date(2000, 11, 31)])
-    .range([0, width]);
+  var svg = d3.select("#heatmap").append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-var y = d3.scale.linear()
-    .domain([1981, 2016])
-    .rangeRound([height, 0]);
+  return {svg:svg, margin:margin, width:width, height:height, windowHeight:windowHeight, windowWidth:windowWidth};
+};
 
-var z = d3.scale.linear()
-    .domain([0, 600000000])
-    .range(["red", "green"])
-    .interpolate(d3.interpolateLab);
+var svgData = drawSvg();
+var svg = svgData.svg;
+var margin = svgData.margin;
+var width = svgData.width;
+var height = svgData.height;
+var windowHeight = svgData.windowHeight;
+var windowWidth = svgData.windowWidth; 
 
-var xAxis = d3.svg.axis()
-    .scale(x)
-    .orient("bottom");
+function defineAxes() {
+  var x = d3.scale.linear()
+      .domain([1, 54])
+      .range([0, width]);
 
-var xAxisMonths = d3.svg.axis()
-    .scale(x2)
-    .orient("top")
-    .ticks(d3.time.months)
-    .tickSize(0, 0)
-    .tickFormat(d3.time.format("%b"));
+  var x2 = d3.time.scale()
+      .domain([new Date(2000, 0, 1), new Date(2000, 11, 31)])
+      .range([0, width]);
 
-var yAxis = d3.svg.axis()
-    .scale(y)
-    .orient("left")
-    .tickFormat(d3.format("d"));
+  var y = d3.scale.linear()
+      .domain([1981, 2016])
+      .rangeRound([height, 0]);
 
-var svg = d3.select("#heatmap").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+  var xAxis = d3.svg.axis()
+      .scale(x)
+      .orient("bottom");
 
-d3.csv("test_2.csv", function(error, data) {
+  var xAxisMonths = d3.svg.axis()
+      .scale(x2)
+      .orient("top")
+      .ticks(d3.time.months)
+      .tickSize(0, 0)
+      .tickFormat(d3.time.format("%b"));
 
+  var yAxis = d3.svg.axis()
+      .scale(y)
+      .orient("left")
+      .tickFormat(d3.format("d"));
+
+  return {x:x, x2:x2, y:y, z:z, xAxis:xAxis, xAxisMonths:xAxisMonths, yAxis:yAxis}
+};
+
+var axes = defineAxes();
+var x = axes.x
+var x2 = axes.x2
+var y = axes.y
+var z = axes.z;
+var xAxis = axes.xAxis
+var xAxisMonths = axes.xAxisMonths
+var yAxis = axes.yAxis
+
+function drawHeatmap(data, fillType) {
   var nest = d3.nest()
-  	.key(function(d) { return d.year; })
-  	.entries(data);
+    .key(function(d) { return d.year; })
+    .entries(data);
+
+  var allGrosses = [];
+  for(i=0; i < data.length; i++) {
+    allGrosses.push(+data[i].inflation_adj_total_gross);
+  };
+
+  var z = d3.scale.linear()
+    .domain([d3.min(allGrosses), d3.max(allGrosses)])
+    .range(["white", "green"])
+    .interpolate(d3.interpolateLab);
 
   var weekNo = svg.selectAll(".weekNo")
       .data(nest)
     .enter().append("g")
       .attr("class", "weekNo");
 
-  weekNo.selectAll(".bin")
+  var bin = weekNo.selectAll(".bin");
+
+  bin
       .data(function (d) { return d.values })
     .enter().append("rect")
       .attr("class", "bin")
       .attr("x", function (d) { return x(d.week_num) ; })
-      .attr("width", function (d, i) { return  x(i+1) - x(i) - 0.5; })
-      .style("fill", function(d) { return z(d.inflation_adj_total_gross); });
-  
+      .attr("width", function (d, i) { return  x(i+1) - x(i) - 0.5; });
+
   weekNo.each(function (d) {
     d3.select(this).selectAll(".bin")
         .attr("y", function(d) { return y(d.year) } )
         .attr("height", windowHeight / 43 );
   });
 
-  weekNo.each(function (d) {
-  	var grosses = []
-  	for(i=0; i < d.values.length; i++) {
+  if (fillType === "overall") {
+    weekNo.each(function (d) {
+      d3.select(this).selectAll(".bin")
+        .style("fill", function(d) { return z(d.inflation_adj_total_gross); })
+    });
+  } else if (fillType === "year") {
+    weekNo.each(function (d) {
+      var grosses = []
+      for(i=0; i < d.values.length; i++) {
 
-  		grosses.push(+d.values[i].inflation_adj_total_gross)
-  	}
+        grosses.push(+d.values[i].inflation_adj_total_gross)
+      }
 
-  	var zWeekNo = d3.scale.linear()
-	    .domain([d3.min(grosses), d3.max(grosses)])
-	    .range(["white", "green"])
-	    .interpolate(d3.interpolateLab);
+      var zWeekNo = d3.scale.linear()
+        .domain([d3.min(grosses), d3.max(grosses)])
+        .range(["white", "green"])
+        .interpolate(d3.interpolateLab);
 
-  	d3.select(this).selectAll(".bin")
-  		.style("fill", function(d) { return zWeekNo(d.inflation_adj_total_gross); })
-  });
+      d3.select(this).selectAll(".bin")
+        .style("fill", function(d) { return zWeekNo(d.inflation_adj_total_gross); })
+    });
+  } else if (fillType === "week_num") {
+    
+  }
 
   svg.append("g")
       .attr("class", "x axis")
@@ -173,9 +214,9 @@ d3.csv("test_2.csv", function(error, data) {
       var topOffset = d3.event.pageY - 20;
     };
 
-  	var tooltip = d3.select("#tooltip");
-  	tooltip
-  		.style("left", leftOffset + "px")
+    var tooltip = d3.select("#tooltip");
+    tooltip
+      .style("left", leftOffset + "px")
         .style("top", topOffset - 75 + "px")
         .style("opacity", 1)
         .select("#value")
@@ -184,7 +225,7 @@ d3.csv("test_2.csv", function(error, data) {
 
   svg.selectAll(".bin").on("mouseout", function(d) {
 
-  	d3.select("#tooltip")
+    d3.select("#tooltip")
       .style("opacity", 0);;
     });
 
@@ -192,8 +233,23 @@ d3.csv("test_2.csv", function(error, data) {
     window.open("http://www.boxofficemojo.com/weekly/chart/?yr=" 
       + d.year + "&wk=" + d.week_num + "&p=.htm");
   });
+}
 
+d3.csv("test_2.csv", function(error, data) {
+  drawHeatmap(data, "overall");  
+
+  $("#year").click(function() {
+    svg.selectAll("*").remove();
+    drawHeatmap(data, "year");  
+  });
+
+  $("#overall").click(function() {
+    svg.selectAll("*").remove();
+    drawHeatmap(data, "overall");  
+  });
+  
 });
+
 </script>
 
 </html>
