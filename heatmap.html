@@ -21,17 +21,20 @@
 }
 
 #tooltip p {
-    margin: 0;
-    font-family:  "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-    font-weight: 400;
     font-size: 16px;
     line-height: 20px;
 }
 
+h1, p, button {
+  margin: 0;
+  font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  font-weight: 400;
+}
+
 .bin:hover, .binNew:hover {
-  	stroke: black;
-    stroke-width: 1;
-    cursor: pointer;
+	stroke: black;
+  stroke-width: 1;
+  cursor: pointer;
 }
 
 .axis {
@@ -40,20 +43,46 @@
 
 .axis path,
 .axis line {
-    fill: none;
-    stroke: #000;
-    shape-rendering: crispEdges;
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+#buttons, #header {
+  text-align: center;
+}
+
+#header {
+  margin-bottom: 50px;
+}
+
+#buttons {
+  margin-top: 25px;
+}
+
+button {
+  height: 50px;
+  width: 150px;
+  font-size: 16px;
+  background-color: rgb(61, 70, 105);
+  color: white;
+  cursor: pointer;
 }
 
 </style>
 </head>
 
 <body>
-  <button id="overall">Overall</button>
-  <button id="week_num">By Week Number</button>
-  <button id="year">By Year</button>
+  <div id="header">
+    <h1>Weekly Box Office: Adjusted for Inflation (1999-Present)</h1>
+  </div>
 	<div id="heatmap"></div>
 	<div id="tooltip"><p id="value"></p></div>
+  <div id="buttons">
+    <button id="overall">Overall</button>
+    <button id="week_num">By Week Number</button>
+    <button id="year">By Year</button>
+  </div>
 </body>
 
 <script>
@@ -62,9 +91,9 @@ function drawSvg() {
   var windowHeight = window.innerHeight
   var windowWidth = window.innerWidth
 
-  var margin = {top: 20, right: 85, bottom: 130, left: 50},
+  var margin = {top: 20, right: 100, bottom: 40, left: 100},
       width = windowWidth - margin.left - margin.right,
-      height = windowHeight - margin.top - margin.bottom;
+      height = width / 2.5;
 
   var svg = d3.select("#heatmap").append("svg")
       .attr("width", width + margin.left + margin.right)
@@ -93,7 +122,7 @@ function defineAxes() {
       .range([0, width]);
 
   var y = d3.scale.linear()
-      .domain([1981, 2016])
+      .domain([1998, 2016])
       .rangeRound([height, 0]);
 
   var xAxis = d3.svg.axis()
@@ -110,21 +139,25 @@ function defineAxes() {
   var yAxis = d3.svg.axis()
       .scale(y)
       .orient("left")
-      .tickFormat(d3.format("d"));
+      .tickFormat(d3.format("d"))
+      .ticks(5);
 
   return {x:x, x2:x2, y:y, z:z, xAxis:xAxis, xAxisMonths:xAxisMonths, yAxis:yAxis}
 };
 
 var axes = defineAxes();
-var x = axes.x
-var x2 = axes.x2
-var y = axes.y
+var x = axes.x;
+var x2 = axes.x2;
+var y = axes.y;
 var z = axes.z;
-var xAxis = axes.xAxis
-var xAxisMonths = axes.xAxisMonths
-var yAxis = axes.yAxis
+var xAxis = axes.xAxis;
+var xAxisMonths = axes.xAxisMonths;
+var yAxis = axes.yAxis;
 
-d3.csv("test_2.csv", function(error, data) {
+var heightDivisor = 28;
+var colorRange = ["#FFFFFF", "#061F46"];
+
+d3.csv("weekly_box_office_since_1999.csv", function(error, data) {
   drawHeatmap(data, "overall");  
 
   $("#year").click(function() {
@@ -168,7 +201,7 @@ function drawHeatmap(data, fillType) {
     weekNo.each(function (d) {
       d3.select(this).selectAll(".bin")
           .attr("y", function(d) { return y(d.year) } )
-          .attr("height", windowHeight / 43 );
+          .attr("height", windowHeight / heightDivisor );
     });
 
     var allGrosses = [];
@@ -178,11 +211,15 @@ function drawHeatmap(data, fillType) {
 
     var z = d3.scale.linear()
       .domain([d3.min(allGrosses), d3.max(allGrosses)])
-      .range(["white", "red"])
+      .range(colorRange)
       .interpolate(d3.interpolateLab);
 
     weekNo.each(function (d) {
-      d3.select(this).selectAll(".bin")
+      d3.select(this)
+        .transition()
+        .duration(300)
+        .ease("elastic")
+        .selectAll(".bin")
         .style("fill", function(d) { return z(d.inflation_adj_total_gross); })
     });
 
@@ -254,7 +291,7 @@ function drawHeatmap(data, fillType) {
     weekNo.each(function (d) {
       d3.select(this).selectAll(".bin")
           .attr("y", function(d) { return y(d.year) } )
-          .attr("height", windowHeight / 43 );
+          .attr("height", windowHeight / heightDivisor );
     });
 
 
@@ -267,11 +304,15 @@ function drawHeatmap(data, fillType) {
 
       var zWeekNo = d3.scale.linear()
         .domain([d3.min(grosses), d3.max(grosses)])
-        .range(["white", "red"])
+        .range(["#FFFFFF", "#061F46"])
         .interpolate(d3.interpolateLab);
 
-      d3.select(this).selectAll(".bin")
-        .style("fill", function(d) { return zWeekNo(d.inflation_adj_total_gross); })
+      d3.select(this)
+        .transition()
+        .duration(300)
+        .ease("elastic")
+        .selectAll(".bin")
+        .style("fill", function(d) { return zWeekNo(d.inflation_adj_total_gross); });
     });
 
     svg.append("g")
@@ -320,7 +361,7 @@ function drawHeatmap(data, fillType) {
         });
 
       svg.selectAll(".bin").on("click", function(d) {
-        window.open("http://www.boxofficemojo.com/weekly/chart/?yr=" 
+        window.open("http://www.boxofficemojo.com/weekly/chart/?yr="
           + d.year + "&wk=" + d.week_num + "&p=.htm");
       });
 
@@ -343,8 +384,7 @@ function drawHeatmap(data, fillType) {
         .enter().append("rect")
           .attr("class", "binNew")
           .attr("y", function(d) { return y(d.year) } )
-          .attr("height", windowHeight / 43 );
-          
+          .attr("height", windowHeight / heightDivisor )
 
       weekNoNew.each(function (d) {
         var test = d3.select(this).selectAll(".binNew")
@@ -361,11 +401,16 @@ function drawHeatmap(data, fillType) {
 
         var zYear = d3.scale.linear()
           .domain([d3.min(weekGrosses), d3.max(weekGrosses)])
-          .range(["white", "red"])
+          .range(colorRange)
           .interpolate(d3.interpolateLab);
 
-        d3.select(this).selectAll(".binNew")
+        d3.select(this)
+          .transition()
+          .duration(300)
+          .ease("elastic")
+          .selectAll(".binNew")
           .style("fill", function(d) { return zYear(d.inflation_adj_total_gross); })
+
       });
 
       svg.append("g")
