@@ -124,20 +124,31 @@ var xAxis = axes.xAxis
 var xAxisMonths = axes.xAxisMonths
 var yAxis = axes.yAxis
 
+d3.csv("test_2.csv", function(error, data) {
+  drawHeatmap(data, "overall");  
+
+  $("#year").click(function() {
+    svg.selectAll("*").remove();
+    drawHeatmap(data, "year");  
+  });
+
+  $("#overall").click(function() {
+    svg.selectAll("*").remove();
+    drawHeatmap(data, "overall");  
+  });
+
+  $("#week_num").click(function() {
+    svg.selectAll("*").remove();
+    drawHeatmap(data, "week_num");  
+  });
+  
+});
+
+
 function drawHeatmap(data, fillType) {
   var nest = d3.nest()
     .key(function(d) { return d.year; })
     .entries(data);
-
-  var allGrosses = [];
-  for(i=0; i < data.length; i++) {
-    allGrosses.push(+data[i].inflation_adj_total_gross);
-  };
-
-  var z = d3.scale.linear()
-    .domain([d3.min(allGrosses), d3.max(allGrosses)])
-    .range(["white", "green"])
-    .interpolate(d3.interpolateLab);
 
   if (fillType === "overall") {
     var weekNo = svg.selectAll(".weekNo")
@@ -159,6 +170,16 @@ function drawHeatmap(data, fillType) {
           .attr("y", function(d) { return y(d.year) } )
           .attr("height", windowHeight / 43 );
     });
+
+    var allGrosses = [];
+      for(i=0; i < data.length; i++) {
+        allGrosses.push(+data[i].inflation_adj_total_gross);
+      };
+
+    var z = d3.scale.linear()
+      .domain([d3.min(allGrosses), d3.max(allGrosses)])
+      .range(["white", "red"])
+      .interpolate(d3.interpolateLab);
 
     weekNo.each(function (d) {
       d3.select(this).selectAll(".bin")
@@ -246,7 +267,7 @@ function drawHeatmap(data, fillType) {
 
       var zWeekNo = d3.scale.linear()
         .domain([d3.min(grosses), d3.max(grosses)])
-        .range(["white", "green"])
+        .range(["white", "red"])
         .interpolate(d3.interpolateLab);
 
       d3.select(this).selectAll(".bin")
@@ -305,42 +326,15 @@ function drawHeatmap(data, fillType) {
 
 
   } else if (fillType === "week_num") {
-      var yNew = d3.scale.linear()
-        .domain([0, 54])
-        .range([height, 0]);
 
-      var yNew2 = d3.time.scale()
-          .domain([new Date(2000, 0, 1), new Date(2000, 11, 31)])
-          .range([height, 0]);
-
-      var xNew = d3.scale.linear()
-          .domain([1982, 2016])
-          .rangeRound([0, width]);
-
-      var xAxisNew = d3.svg.axis()
-          .scale(xNew)
-          .orient("bottom");
-
-      var yAxisMonthsNew = d3.svg.axis()
-          .scale(yNew2)
-          .orient("right")
-          .ticks(d3.time.months)
-          .tickSize(0, 0)
-          .tickFormat(d3.time.format("%b"));
-
-      var yAxisNew = d3.svg.axis()
-          .scale(yNew)
-          .orient("left")
-          .tickFormat(d3.format("d"));
-
-      var nest = d3.nest()
+      var nestNew = d3.nest()
         .key(function(d) { return d.week_num; })
         .entries(data);
 
       var weekNoNew = svg.selectAll(".weekNoNew")
-        .data(nest)
-      .enter().append("g")
-        .attr("class", "weekNoNew");
+          .data(nestNew)
+        .enter().append("g")
+          .attr("class", "weekNoNew");
 
       var binNew = weekNoNew.selectAll(".binNew");
 
@@ -348,13 +342,15 @@ function drawHeatmap(data, fillType) {
           .data(function (d) { return d.values })
         .enter().append("rect")
           .attr("class", "binNew")
-          .attr("x", function (d) { return xNew(d.year) ; })
-          .attr("width", function (d, i) { return  xNew(i+1) - xNew(i) - 0.5; });
+          .attr("y", function(d) { return y(d.year) } )
+          .attr("height", windowHeight / 43 );
+          
 
       weekNoNew.each(function (d) {
-        d3.select(this).selectAll(".binNew")
-            .attr("y", function(d) { return yNew(d.week_num) } )
-            .attr("height", windowHeight / 70 );
+        var test = d3.select(this).selectAll(".binNew")
+
+            .attr("x", function (d) { return x(d.week_num) ; })
+            .attr("width", function (d, i) { return  x(i+1) - x(i) - 0.5; });
       });
       
       weekNoNew.each(function (d) {
@@ -365,7 +361,7 @@ function drawHeatmap(data, fillType) {
 
         var zYear = d3.scale.linear()
           .domain([d3.min(weekGrosses), d3.max(weekGrosses)])
-          .range(["white", "green"])
+          .range(["white", "red"])
           .interpolate(d3.interpolateLab);
 
         d3.select(this).selectAll(".binNew")
@@ -375,16 +371,16 @@ function drawHeatmap(data, fillType) {
       svg.append("g")
         .attr("class", "x axis")
         .attr("transform", "translate(0," + height + ")")
-        .call(xAxisNew);
+        .call(xAxis);
 
       svg.append("g")
-        .attr("class", "y axis months")
-        .attr("transform", "translate(" + (width) + ",0)")
-        .call(yAxisMonthsNew);
+        .attr("class", "x axis months")
+        .attr("transform", "translate(0," + (margin.top - 10) + ")")
+        .call(xAxisMonths);
 
       svg.append("g")
           .attr("class", "y axis")
-          .call(yAxisNew);
+          .call(yAxis);
 
       svg.selectAll(".binNew").on("mousemove", function(d) {
 
@@ -402,7 +398,7 @@ function drawHeatmap(data, fillType) {
           var topOffset = d3.event.pageY - 20;
         };
 
-        var tooltip = d3.select("#tooltip");
+      var tooltip = d3.select("#tooltip");
         tooltip
           .style("left", leftOffset + "px")
             .style("top", topOffset - 75 + "px")
@@ -423,27 +419,6 @@ function drawHeatmap(data, fillType) {
       });
   };
 }
-
-d3.csv("test_2.csv", function(error, data) {
-  drawHeatmap(data, "overall");  
-
-  $("#year").click(function() {
-    svg.selectAll("*").remove();
-    drawHeatmap(data, "year");  
-  });
-
-  $("#overall").click(function() {
-    svg.selectAll("*").remove();
-    drawHeatmap(data, "overall");  
-  });
-
-  $("#week_num").click(function() {
-    svg.selectAll("*").remove();
-    drawHeatmap(data, "week_num");  
-  });
-  
-});
-
 </script>
 
 </html>
