@@ -46,10 +46,10 @@ class GetBOMWeeklyData(object):
 	def get_data(self):
 		return self.data
 
-data = GetBOMWeeklyData(1982, 2015).get_data()
+data = GetBOMWeeklyData(1999, 2015).get_data()
 print data
 
-with open('test_2.csv', 'w') as f:
+with open('weekly_box_office_since_1999.csv', 'w') as f:
 	writer = csv.writer(f)
 	for year in data:
 		writer.writerows(year)

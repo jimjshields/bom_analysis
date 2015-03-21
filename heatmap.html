@@ -80,8 +80,8 @@ button {
 	<div id="tooltip"><p id="value"></p></div>
   <div id="buttons">
     <button id="overall">Overall</button>
-    <button id="week_num">By Week Number</button>
     <button id="year">By Year</button>
+    <button id="week_num">By Week Number</button>
   </div>
 </body>
 
@@ -111,6 +111,7 @@ var width = svgData.width;
 var height = svgData.height;
 var windowHeight = svgData.windowHeight;
 var windowWidth = svgData.windowWidth; 
+var dollar = d3.format("$,");
 
 function defineAxes() {
   var x = d3.scale.linear()
@@ -154,7 +155,7 @@ var xAxis = axes.xAxis;
 var xAxisMonths = axes.xAxisMonths;
 var yAxis = axes.yAxis;
 
-var heightDivisor = 28;
+var heightDivisor = 29;
 var colorRange = ["#FFFFFF", "#061F46"];
 
 d3.csv("weekly_box_office_since_1999.csv", function(error, data) {
@@ -259,7 +260,7 @@ function drawHeatmap(data, fillType) {
             .style("top", topOffset - 75 + "px")
             .style("opacity", 1)
             .select("#value")
-            .html(d.year + ", Week " + d.week_num + "<br>" + d.top_movie);
+            .html(d.year + ", Week " + d.week_num + "<br>" + d.top_movie + "<br>" + dollar(d.inflation_adj_total_gross));
       });
 
       svg.selectAll(".bin").on("mouseout", function(d) {
@@ -351,7 +352,7 @@ function drawHeatmap(data, fillType) {
             .style("top", topOffset - 75 + "px")
             .style("opacity", 1)
             .select("#value")
-            .html(d.year + ", Week " + d.week_num + "<br>" + d.top_movie);
+            .html(d.year + ", Week " + d.week_num + "<br>" + d.top_movie + "<br>" + dollar(d.inflation_adj_total_gross));
       });
 
       svg.selectAll(".bin").on("mouseout", function(d) {
@@ -449,7 +450,7 @@ function drawHeatmap(data, fillType) {
             .style("top", topOffset - 75 + "px")
             .style("opacity", 1)
             .select("#value")
-            .html(d.year + ", Week " + d.week_num + "<br>" + d.top_movie);
+            .html(d.year + ", Week " + d.week_num + "<br>" + d.top_movie + "<br>" + dollar(d.inflation_adj_total_gross));
       });
 
       svg.selectAll(".binNew").on("mouseout", function(d) {
